@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,7 +13,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Request represents the JSON structure of the LINE webhook event
+const accessToken = "iGraIEph4ShvuNEYaLVaPLnwHIKcQvzWM3T8mdw8ir4CwCREUMcp6XdEk/L88evFEPV9qnAWGgGXqE5GNW720bi137Ydc5hX6l1bL1K3N9nEp08KBsK8CrDzEZkbmxRTs9Ns6lUG5lnKiFKecxd0fAdB04t89/1O/w1cDnyilFU="
+const internalErrTxt = "Internal server error"
+
 type Request struct {
 	Events []struct {
 		ReplyToken string `json:"replyToken"`
@@ -22,97 +25,124 @@ type Request struct {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"message"`
+		Source struct {
+			UserID string `json:"userId"`
+		} `json:"source"`
 	} `json:"events"`
 }
 
-// Response represents the JSON structure of the LINE reply message
 type Response struct {
-	ReplyToken string `json:"replyToken"`
-	Messages   []struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
-	} `json:"messages"`
+	ReplyToken string    `json:"replyToken"`
+	Messages   []Message `json:"messages"`
 }
 
-// LineBotHandler handles LINE webhook events
+type Message struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
 func LineBotHandler(c *gin.Context) {
-	// Parse request body
 	var req Request
-	const inServerErrTxt = "Internal server error"
 	if err := c.BindJSON(&req); err != nil {
 		log.Println("Error decoding request body:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": inServerErrTxt})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalErrTxt})
 		return
 	}
 
-	// Connect to MySQL database
-	db, err := sql.Open("mysql", "user:password@tcp(localhost:3306)/database")
+	db, err := sql.Open("mysql", "root:Evild0ergu@tcp(localhost:3306)/pokerth")
 	if err != nil {
 		log.Println("Error connecting to database:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": inServerErrTxt})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": internalErrTxt})
 		return
 	}
 	defer db.Close()
 
-	// Process each event
 	for _, event := range req.Events {
-		if event.Type == "message" {
-			// Retrieve member credit from MySQL (replace "your_member_id" with actual member ID)
-			memberCredit, err := getMemberCredit(db, "your_member_id")
-			if err != nil {
-				log.Println("Error retrieving member credit from database:", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": inServerErrTxt})
-				return
-			}
+		if event.Type == "message" && event.Message.Type == "text" {
 
-			// Construct the reply message
-			replyMessage := Response{
-				ReplyToken: event.ReplyToken,
-				Messages: []struct {
-					Type string `json:"type"`
-					Text string `json:"text"`
-				}{
-					{
-						Type: "text",
-						Text: event.Message.Text + " From Bot, Your Credit: " + strconv.FormatFloat(memberCredit, 'f', 2, 64),
+			// COMMAND "test"
+			if event.Message.Text == "test" {
+				println(" >>>>>>>>>>>> User ID is " + event.Source.UserID)
+				replyMessage := Response{
+					ReplyToken: event.ReplyToken,
+					Messages: []Message{
+						{
+							Type: "text",
+							Text: "Your LINE ID is: " + event.Source.UserID,
+						},
 					},
-				},
+				}
+
+				if err := replyToLine(replyMessage, accessToken); err != nil {
+					log.Println("Error sending reply message to LINE:", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": internalErrTxt})
+					return
+				}
 			}
 
-			// Send the reply message to LINE
-			if err := replyToLine(replyMessage); err != nil {
-				log.Println("Error sending reply message to LINE:", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": inServerErrTxt})
-				return
+			if event.Message.Text == "c" {
+				var userCredit float64
+				err := db.QueryRow("SELECT member_credit FROM member WHERE member_line_Id = ?", event.Source.UserID).Scan(&userCredit)
+				if err != nil {
+					log.Println("Error retrieving user credit from database:", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": internalErrTxt})
+					return
+				}
+
+				replyMessage := Response{
+					ReplyToken: event.ReplyToken,
+					Messages: []Message{
+						{
+							Type: "text",
+							Text: "Your credit is: " + strconv.FormatFloat(userCredit, 'f', 2, 64),
+						},
+					},
+				}
+
+				if err := replyToLine(replyMessage, accessToken); err != nil {
+					log.Println("Error sending reply message to LINE:", err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": internalErrTxt})
+					return
+				}
 			}
 		}
 	}
 
-	// Respond with status OK
 	c.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
-func getMemberCredit(db *sql.DB, memberID string) (float64, error) {
-	var memberCredit float64
-	err := db.QueryRow("SELECT member_credit FROM member WHERE member_id = ?", memberID).Scan(&memberCredit)
-	if err != nil {
-		return 0, err
-	}
-	return memberCredit, nil
-}
-
-func replyToLine(replyMessage Response) error {
-	// Marshal the reply message to JSON
+func replyToLine(replyMessage Response, accessToken string) error {
+	// Convert replyMessage to JSON
 	replyJSON, err := json.Marshal(replyMessage)
 	if err != nil {
 		return err
 	}
 
-	// Send the reply message to LINE
-	_, err = http.Post("https://api.line.me/v2/bot/message/reply", "application/json", bytes.NewBuffer(replyJSON))
+	log.Println("Reply JSON:", string(replyJSON))
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", "https://api.line.me/v2/bot/message/reply", bytes.NewBuffer(replyJSON))
 	if err != nil {
 		return err
 	}
 
+	// Add authorization header with access token
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check response status code
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	return nil
+
 }
