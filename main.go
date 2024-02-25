@@ -13,7 +13,7 @@ func main() {
 	r.POST("/webhook", handlers.WebhookHandler)
 
 	log.Println("Starting server on port 8080...")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:8080", r); err != nil {
 		log.Fatal("Server error:", err)
 	}
 }
