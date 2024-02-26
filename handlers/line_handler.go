@@ -75,6 +75,9 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 		member := models.Member{
 			MemberLineID:      lineID,
 			MemberDisplayName: profile.DisplayName,
+			MemberPictureURL:  profile.PictureURL,
+			MemberCredit:      0.0,
+			UserLevelID:       4,
 		}
 		err := models.CreateMember(db, &member)
 		if err != nil {

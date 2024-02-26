@@ -11,7 +11,11 @@ type Member struct {
 	MemberDisplayName string
 	MemberCredit      float64
 	UserLevelID       int
-	MemberPictureURL  string
+	MemberPictureURL  string `gorm:"type:VARCHAR(255)"`
+}
+
+func (Member) TableName() string {
+	return "member"
 }
 
 // CreateMember inserts a new member record into the database
