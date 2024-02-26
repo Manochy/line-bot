@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const failRegister = "ลงทะเบียนล้มเหลว กรุณาติดต่อแอดมินค่ะ"
+
 func HandleCallback(bot *linebot.Client, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		events, err := bot.ParseRequest(c.Request)
@@ -71,24 +73,46 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 
 	switch text {
 	case "reg":
-		// Call the CreateMember function to insert a new member
+		// Check if a member with the same line ID already exists
+		existingMember, err := models.SelectMemberByLineId(db, lineID)
+		if err != nil {
+			log.Println("Error retrieving existing member:", err)
+			sendReply(bot, replyToken, failRegister)
+			return
+		}
+
+		// If a member with the same line ID already exists, do nothing
+		if existingMember != nil {
+			sendReply(bot, replyToken, "You are already registered.")
+			return
+		}
+
+		// Generate the next MemberID
+		nextMemberId, err := models.GetNextMemberID(db)
+		if err != nil {
+			log.Println("Error generating next MemberID:", err)
+			sendReply(bot, replyToken, failRegister)
+			return
+		}
+
 		member := models.Member{
+			MemberID:          nextMemberId,
 			MemberLineID:      lineID,
 			MemberDisplayName: profile.DisplayName,
 			MemberPictureURL:  profile.PictureURL,
 			MemberCredit:      0.0,
 			UserLevelID:       4,
 		}
-		err := models.CreateMember(db, &member)
+		err = models.CreateMember(db, &member)
 		if err != nil {
 			// Handle the error (e.g., return an error response)
 			log.Println("Error inserting new member:", err)
-			sendReply(bot, replyToken, "Failed to register. Please try again later.")
+			sendReply(bot, replyToken, failRegister)
 			return
 		}
 
 		// Registration successful message
-		sendReply(bot, replyToken, "Registration successful!")
+		sendReply(bot, replyToken, "ลงทะเบียนสำเร็จเรียบร้อยค่ะ")
 
 	case "showId":
 		// Implement function to retrieve user's Line ID

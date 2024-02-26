@@ -1,6 +1,8 @@
 package models
 
 import (
+	"strconv"
+
 	"gorm.io/gorm"
 )
 
@@ -38,4 +40,23 @@ func SelectMemberByLineId(db *gorm.DB, memberID string) (*Member, error) {
 	var member Member
 	err := db.First(&member, "member_line_Id = ?", memberID).Error
 	return &member, err
+}
+
+// GetNextMemberID returns the next available MemberID by incrementing the maximum MemberID in the database
+func GetNextMemberID(db *gorm.DB) (string, error) {
+	var maxMemberID string
+	if err := db.Raw("SELECT MAX(member_id) FROM member").Scan(&maxMemberID).Error; err != nil {
+		return "", err
+	}
+
+	// Convert the maximum MemberID to an integer
+	maxID, err := strconv.Atoi(maxMemberID)
+	if err != nil {
+		return "", err
+	}
+
+	// Increment the maximum MemberID by 1
+	nextMemberID := strconv.Itoa(maxID + 1)
+
+	return nextMemberID, nil
 }
