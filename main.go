@@ -24,11 +24,11 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.POST("/callback", handlers.HandleCallback)
+	r.POST("/callback", handlers.HandleCallback(bot))
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "12024"
 	}
 	log.Printf("Starting server on port %s...\n", port)
 	if err := r.Run(":" + port); err != nil {
