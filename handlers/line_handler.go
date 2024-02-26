@@ -64,7 +64,7 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 	profile, err := bot.GetProfile(event.Source.UserID).Do()
 	if err != nil {
 		log.Println("Error getting user profile:", err)
-		sendReply(bot, replyToken, "Failed to get user profile. Please try again later.")
+		sendReply(bot, replyToken, "ดึงข้อมูลจากทางเซิฟเวอร์ของ Line ไม่ได้ \n โปรดรอสักครู่ค่อยทำรายการใหม่ค่ะ")
 		return
 	}
 
@@ -83,7 +83,7 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 
 		// If a member with the same line ID already exists, do nothing
 		if existingMember != nil {
-			sendReply(bot, replyToken, "You are already registered.")
+			sendReply(bot, replyToken, "ไอดีคุณเคยลงทะเบียนไว้แล้วค่ะ \n ตรวจสอบเครดิตพิมพ์ c ค่ะ")
 			return
 		}
 
@@ -116,7 +116,7 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 
 	case "showId":
 		// Implement function to retrieve user's Line ID
-		sendReply(bot, replyToken, "Your Line ID is: "+event.Source.UserID)
+		sendReply(bot, replyToken, "ไอดีไลน์ของคุณคือ : "+event.Source.UserID)
 
 	case "c", "C":
 		// Implement function to retrieve user's credit from database and reply
@@ -131,7 +131,7 @@ func handleTextMessage(bot *linebot.Client, db *gorm.DB, event *linebot.Event) {
 		// Get the credit from the retrieved member
 		userCredit := member.MemberCredit
 
-		sendReply(bot, replyToken, "Your credit is: "+strconv.FormatFloat(userCredit, 'f', 2, 64))
+		sendReply(bot, replyToken, "คุณมีเครดิตคงเหลือ : "+strconv.FormatFloat(userCredit, 'f', 2, 64))
 	default:
 		// Handle other commands or messages
 	}
