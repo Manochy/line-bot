@@ -14,13 +14,12 @@ import (
 )
 
 var bot *linebot.Client
-
 var db *gorm.DB
 
 func initDB() {
 	// Initialize database connection
 	var err error
-	dsn := "root:Evild0ergu@tcp(loclahost:3306)/pokerth?charset=utf8mb4&parseTime=True&loc=Local" // Replace "dbname" with your database name
+	dsn := "root:Evild0ergu@tcp(localhost:3306)/pokerth?charset=utf8mb4&parseTime=True&loc=Local" // Replace "dbname" with your database name
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -41,15 +40,11 @@ func main() {
 	initDB()
 	// Defer closing of db
 	defer func() {
-		if db != nil {
-			sqlDB, err := db.DB()
-			if err != nil {
-				log.Fatal("failed to get underlying database connection:", err)
-			}
-			if err := sqlDB.Close(); err != nil {
-				log.Fatal("failed to close database connection:", err)
-			}
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatal(err)
 		}
+		sqlDB.Close()
 	}()
 
 	r := gin.Default()
