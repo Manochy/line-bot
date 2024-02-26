@@ -78,12 +78,14 @@ func handleTextMessage(bot *linebot.Client, event *linebot.Event) {
                 member_display_Name,
                 member_credit,
                 userLevelId,
-                profile_picture_url
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                member_picture_url
+            ) VALUES (
+				?, ?, ?, ?, ?, ?, ?
+			)
         `
 
 		// Execute the SQL statement
-		_, err = models.GetDB().Exec(query, "", lineID, displayName, 0.0, 1, "", pictureURL)
+		_, err = models.GetDB().Exec(query, "", lineID, displayName, 0, 4, pictureURL)
 		if err != nil {
 			log.Println("Error inserting new member:", err)
 			sendReply(bot, replyToken, "Failed to register. Please try again later.")
