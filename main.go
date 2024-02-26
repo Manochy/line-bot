@@ -9,9 +9,23 @@ import (
 	"github.com/Manochy/line-bot/handlers"
 	"github.com/gin-gonic/gin"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 var bot *linebot.Client
+
+var db *gorm.DB
+
+func initDB() {
+	// Initialize database connection
+	var err error
+	dsn := "root:Evild0ergu@tcp(loclahost:3306)/pokerth?charset=utf8mb4&parseTime=True&loc=Local" // Replace "dbname" with your database name
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+}
 
 func main() {
 	var err error
@@ -23,8 +37,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Initialize db connection
+	initDB()
+	// Defer closing of db
+	defer func() {
+		if db != nil {
+			sqlDB, err := db.DB()
+			if err != nil {
+				log.Fatal("failed to get underlying database connection:", err)
+			}
+			if err := sqlDB.Close(); err != nil {
+				log.Fatal("failed to close database connection:", err)
+			}
+		}
+	}()
+
 	r := gin.Default()
-	r.POST("/callback", handlers.HandleCallback(bot))
+	r.POST("/callback", handlers.HandleCallback(bot, db))
 
 	port := os.Getenv("PORT")
 	if port == "" {
