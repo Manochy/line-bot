@@ -1,5 +1,3 @@
-// handlers/message_handler.go
-
 package handlers
 
 import (
@@ -11,9 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/line/line-bot-sdk-go/linebot"
 )
-
-const accessToken = "3sPiJyEc0px9rXJiv80h5HAvoqTF+RF5pGqfIcsh/5vEZ8+x+b2E064u8Yt4f5o2QwFhRit8G9Rn034AKMG4Z6Bxiur0qX7w9mCuasUlYerYW9H1D4b8sFLjQIxyN9cPW5VzbdxS/3FuYJKONzM+ewdB04t89/1O/w1cDnyilFU="
-const internalErrTxt = "Internal server error"
 
 func HandleCallback(bot *linebot.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {

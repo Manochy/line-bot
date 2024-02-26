@@ -16,8 +16,8 @@ var bot *linebot.Client
 func main() {
 	var err error
 	bot, err = linebot.New(
-		os.Getenv("CHANNEL_SECRET"),
-		os.Getenv("CHANNEL_ACCESS_TOKEN"),
+		os.Getenv("43d644a6edbf6bbcf7f30b29672ff6be"),
+		os.Getenv("3sPiJyEc0px9rXJiv80h5HAvoqTF+RF5pGqfIcsh/5vEZ8+x+b2E064u8Yt4f5o2QwFhRit8G9Rn034AKMG4Z6Bxiur0qX7w9mCuasUlYerYW9H1D4b8sFLjQIxyN9cPW5VzbdxS/3FuYJKONzM+ewdB04t89/1O/w1cDnyilFU="),
 	)
 	if err != nil {
 		log.Fatal(err)
