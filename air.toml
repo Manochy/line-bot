@@ -1,0 +1,11 @@
+# .air.toml
+# Refresh the browser after the restart, this feature requires https://github.com/cosmtrek/air/pull/147
+[build]
+  binary = "main.go" # replace with the path to your main.go file
+
+[build.log]
+  color = true
+
+[tool]
+  # Comment to disable.
+  watchdog = true
